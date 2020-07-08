@@ -10,6 +10,12 @@ from datetime import datetime as dt
 
 import xlsxwriter
 
+def list_to_number_string(value):
+    if isinstance(value, (list, tuple)):
+        return str(value)[1:-1]
+    else:
+        return value
+
 # Hard coded in the file location and name
 folder = 'C:\\Users\\Anubis\\Documents\\GitHub\\covid-19-data\\'
 
@@ -44,13 +50,15 @@ workbook = xlsxwriter.Workbook(save_file)
 # Add the date format to the workbook
 format3 = workbook.add_format({'num_format': 'mm/dd/yy'})
 
-# Add a worksheet for cases, a worksheet for deaths, and put column labels on both
+# Add a worksheet for cases, a worksheet for deaths
 worksheet1 = workbook.add_worksheet('Cases')
 worksheet2 = workbook.add_worksheet('Deaths')
 
+# Adds first column label
 worksheet1.write(0, 0, 'State')
 worksheet2.write(0, 0, 'State')
 
+# Adds all date column labels
 for a in range(0, len(dates)):
     worksheet1.write(0, a+1, dates[a], format3)
     worksheet2.write(0, a+1, dates[a], format3)
@@ -59,78 +67,29 @@ for b in range(0, len(sorted_state_names)):
     worksheet1.write(b + 1, 0, sorted_state_names[b])
     worksheet2.write(b + 1, 0, sorted_state_names[b])
 
-date_good = 0
-date_bad = 0
-name_good = 0
-name_bad = 0
-
-# Iterates over the entire dataframe to see if there is data matching the state and date to save into the number of
-# cases and deaths
+# Iterates through all the date/state combinations
 for i in range(0, len(sorted_state_names)):
-
-    state_deaths = []
-    state_cases = []
 
     for j in range(0, len(dates)):
 
-        temp_df = df[df['date'].str.match(str(dates[j]))]
+        # Finds the row in the dataframe that matches the date and state combination -- if none, an empty dataframe
+        # is returned
+        cycle_df = df[df['date'].str.contains(dates[j].strftime('%Y-%m-%d')) &
+                      df['state'].str.contains(sorted_state_names[i])]
 
-        test = [sorted_state_names[i]]
+        # This resets the index so that it's a known value each time
+        cycle_df = cycle_df.reset_index()
 
-        print("isin " + str(temp_df.isin(test)))
+        # If the dataframe isn't empty, then write the values in the dataframe
+        if cycle_df.shape[0] > 0:
+            worksheet1.write(i + 1, j + 1, str(cycle_df.iloc[cycle_df.shape[0]-1, 4]))
+            worksheet2.write(i + 1, j + 1, str(cycle_df.iloc[cycle_df.shape[0]-1, 5]))
 
-        if temp_df.shape[0] > 0:
-
-            if temp_df.isin(test)[0]:
-
-                state_deaths.append(df.iloc[df[df['date'].str.match(sorted_state_names[i]), 4]])
-                state_cases.append(df.iloc[df[df['date'].str.match(sorted_state_names[i]), 3]])
-            else:
-                state_deaths.append(0)
-                state_cases.append(0)
-
+        # Otherwise it writes zeroes for convenience
         else:
-            state_deaths.append(0)
-            state_cases.append(0)
 
+            worksheet1.write(i + 1, j + 1, 0)
+            worksheet2.write(i + 1, j + 1, 0)
 
-        # for k in range(0, df.shape[0]-1):
-        #
-        #     # print(df.iloc[k, 0])
-        #     # print(dates[j].strftime('%Y-%m-%d'))
-        #     # print(df.iloc[k, 1])
-        #     # print(sorted_state_names[i])
-        #
-        #     if df.iloc[k, 0] == dates[j].strftime('%Y-%m-%d'):
-        #
-        #         date_good = date_good + 1
-        #
-        #         if df.iloc[k, 1] == sorted_state_names[i]:
-        #
-        #             name_good = name_good + 1
-        #
-        #             state_deaths.append(df.iloc[k, 4])
-        #             state_cases.append(df.iloc[k, 3])
-        #
-        #         else:
-        #
-        #             name_bad = name_bad + 1
-        #
-        #     else:
-        #
-        #         date_bad = date_bad + 1
-        #
-        #         state_deaths.append(0)
-        #         state_cases.append(0)
-
-    # Write the deaths/cases data for all dates to a single line with the state name
-    for l in range(0, len(state_deaths)):
-        worksheet1.write(i + 1, l + 1, state_cases[l])
-        worksheet2.write(i + 1, l + 1, state_deaths[l])
-
+# Closing the workbook is when it's actually written out, so this is pretty important
 workbook.close()
-
-# print('Date Good')
-# print('Date Bad')
-# print('Name Good')
-# print('Name Bad')
