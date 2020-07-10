@@ -1,10 +1,4 @@
-import matplotlib.pyplot as plt
-
-import numpy as np
-
 import pandas as pd
-
-import os
 
 from datetime import datetime as dt
 
@@ -82,6 +76,7 @@ for i in range(0, len(sorted_state_names)):
 
         # If the dataframe isn't empty, then write the values in the dataframe
         if cycle_df.shape[0] > 0:
+
             worksheet1.write(i + 1, j + 1, str(cycle_df.iloc[cycle_df.shape[0]-1, 4]))
             worksheet2.write(i + 1, j + 1, str(cycle_df.iloc[cycle_df.shape[0]-1, 5]))
 
